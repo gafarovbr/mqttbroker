@@ -1,0 +1,215 @@
+Как реализовать свой билдер для angular ?
+Angular предоставляет мощный инструментарий для сборки приложений на основе ng build. Однако, если вам нужна более гибкая настройка сборки, вы можете создать свой собственный билдер, который будет работать в сочетании с Angular CLI.
+
+Вот шаги, которые вам нужно выполнить, чтобы создать свой собственный билдер:
+
+Установите необходимые пакеты
+Первым шагом вам нужно установить пакеты, которые понадобятся для создания своего собственного билдера. Вы можете использовать npm или yarn для этого.
+
+bash
+Copy code
+npm install --save-dev @angular-devkit/architect
+npm install --save-dev @angular-devkit/build-angular
+Создайте собственный билдер
+Создайте новый каталог для своего собственного билдера и перейдите в него. Затем выполните следующую команду, чтобы создать каркас для своего билдера:
+
+bash
+Copy code
+ng g builder my-builder
+Эта команда создаст новый каталог my-builder и настроит необходимые файлы для вашего собственного билдера.
+
+Настройте свой билдер
+Отредактируйте файл my-builder.schema.json, чтобы настроить свой билдер. В этом файле вы можете определить параметры, которые будут передаваться в ваш билдер при его вызове, а также настроить возвращаемый результат.
+
+Реализуйте свой билдер
+Отредактируйте файл my-builder.ts, чтобы реализовать свой билдер. Этот файл содержит функцию, которая будет вызываться при запуске вашего билдера. В этой функции вы можете определить свою собственную логику сборки, используя необходимые инструменты из @angular-devkit/build-angular.
+
+Зарегистрируйте свой билдер
+Отредактируйте файл workspace.json или angular.json, чтобы зарегистрировать свой билдер. В этом файле вы можете определить, как ваш билдер будет использоваться вместо стандартного ng build.
+
+Вот пример, как может выглядеть ваш workspace.json или angular.json:
+
+json
+Copy code
+{
+  "projects": {
+    "my-project": {
+      "architect": {
+        "build": {
+          "builder": "./my-builder",
+          "options": {},
+          "configurations": {}
+        }
+      }
+    }
+  }
+}
+Используйте свой билдер
+Теперь вы можете использовать свой билдер, запустив следующую команду:
+
+bash
+Copy code
+ng run my-project:build
+Эта команда вызовет ваш собственный б
+
+
+
+
+mwork92@gmail.com
+а если мне надо ввести небольшие корректировки в стандартный билдер @angular-devkit/build-angular:browser
+Если вам нужно внести небольшие изменения в стандартный билдер @angular-devkit/build-angular:browser, то вы можете создать свой кастомный билдер, который будет наследоваться от оригинального билдера.
+
+Для этого вы можете выполнить следующие шаги:
+
+Создайте пустой проект Angular с помощью ng new и перейдите в корневую директорию проекта.
+
+Установите @angular-devkit/build-angular:
+
+bash
+Copy code
+npm install @angular-devkit/build-angular --save-dev
+Создайте файл custom-browser-builder.ts в директории ./src/builders/.
+ts
+Copy code
+import { BuilderContext, BuilderOutput, createBuilder } from '@angular-devkit/architect';
+import { executeBrowserBuilder } from '@angular-devkit/build-angular';
+import { JsonObject } from '@angular-devkit/core';
+
+export default createBuilder<JsonObject & CustomBuilderOptions>(executeBrowserBuilder);
+
+interface CustomBuilderOptions {
+  customOption: boolean;
+}
+
+export function runBuilder(
+  options: CustomBuilderOptions,
+  context: BuilderContext
+): Promise<BuilderOutput> {
+  return executeBrowserBuilder(options, context);
+}
+В файле angular.json добавьте ваш кастомный билдер в раздел builders:
+json
+Copy code
+{
+  "projects": {
+    "my-project": {
+      "architect": {
+        "build": {
+          "builder": "./src/builders/custom-browser-builder.ts",
+          "options": {
+            "customOption": true
+          }
+        }
+      }
+    }
+  }
+}
+Запустите билд:
+bash
+Copy code
+ng build
+Теперь вы можете внести изменения в функциональность билдера, используя свой кастомный билдер. Если вам нужно изменить только некоторые функции оригинального билдера, вы можете переопределить их в своем кастомном билдере и использовать метод super для вызова оригинальных функций.
+
+Обратите внимание, что при использовании кастомного билдера вы должны убедиться, что он работает правильно со всеми инструментами и плагинами, которые используются в вашем проекте.
+
+
+
+
+mwork92@gmail.com
+Как будет выглядеть код билдера если мне надо подменить options.main ?
+Если вам нужно подменить значение параметра options.main во время выполнения билда, вы можете использовать следующий код кастомного билдера:
+
+ts
+Copy code
+import { BuilderContext, BuilderOutput, createBuilder } from '@angular-devkit/architect';
+import { BrowserBuilderOptions, executeBrowserBuilder } from '@angular-devkit/build-angular';
+import { JsonObject } from '@angular-devkit/core';
+
+export default createBuilder<JsonObject & CustomBuilderOptions>(executeCustomBrowserBuilder);
+
+interface CustomBuilderOptions extends BrowserBuilderOptions {
+  customMain: string;
+}
+
+async function executeCustomBrowserBuilder(
+  options: CustomBuilderOptions,
+  context: BuilderContext
+): Promise<BuilderOutput> {
+  const browserBuilderOptions = { ...options };
+  browserBuilderOptions.main = options.customMain; // подменяем значение параметра main
+
+  return executeBrowserBuilder(browserBuilderOptions, context);
+}
+Затем, в angular.json вы можете добавить свой параметр customMain в опции билдера:
+
+json
+Copy code
+{
+  "projects": {
+    "my-project": {
+      "architect": {
+        "build": {
+          "builder": "./path/to/custom-builder",
+          "options": {
+            "customMain": "./src/custom/main.ts",
+            "outputPath": "dist/my-project"
+          }
+        }
+      }
+    }
+  }
+}
+При выполнении команды ng build, значение параметра options.main будет заменено на значение options.customMain. Обратите внимание, что в приведенном выше коде мы расширили BrowserBuilderOptions интерфейсом CustomBuilderOptions, чтобы добавить новый параметр customMain. Это необходимо для того, чтобы Angular CLI мог распознать этот параметр.
+
+
+
+
+mwork92@gmail.com
+А билдер может загружать локальный файл?
+Да, кастомный билдер в Angular может загружать локальный файл. Для этого вы можете использовать стандартные методы Node.js для работы с файлами.
+
+Вот пример реализации такого билдера, который загружает локальный файл в качестве исходного кода:
+
+ts
+Copy code
+import { BuilderContext, BuilderOutput, createBuilder } from '@angular-devkit/architect';
+import { BrowserBuilderOptions, executeBrowserBuilder } from '@angular-devkit/build-angular';
+import { JsonObject } from '@angular-devkit/core';
+import * as fs from 'fs';
+
+export default createBuilder<JsonObject & CustomBuilderOptions>(executeCustomBrowserBuilder);
+
+interface CustomBuilderOptions extends BrowserBuilderOptions {
+  customFile: string;
+}
+
+async function executeCustomBrowserBuilder(
+  options: CustomBuilderOptions,
+  context: BuilderContext
+): Promise<BuilderOutput> {
+  const mainContent = fs.readFileSync(options.customFile, 'utf-8'); // загружаем содержимое файла
+  const browserBuilderOptions = { ...options };
+  browserBuilderOptions.main = mainContent; // используем содержимое файла в качестве исходного кода
+
+  return executeBrowserBuilder(browserBuilderOptions, context);
+}
+Вы можете использовать этот билдер в angular.json следующим образом:
+
+json
+Copy code
+{
+  "projects": {
+    "my-project": {
+      "architect": {
+        "build": {
+          "builder": "./path/to/custom-builder",
+          "options": {
+            "customFile": "./path/to/local/file.ts",
+            "outputPath": "dist/my-project"
+          }
+        }
+      }
+    }
+  }
+}
+Обратите внимание, что в приведенном выше примере мы используем метод readFileSync из модуля fs, чтобы загрузить содержимое файла. Этот метод блокирует выполнение кода до завершения чтения файла, поэтому он может замедлить процесс выполнения билда. Если файл, который вы хотите загрузить, очень большой, то рекомендуется использовать асинхронный метод чтения файла readFile.

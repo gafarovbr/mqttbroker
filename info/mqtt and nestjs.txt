@@ -1,0 +1,48 @@
+import { Module } from '@nestjs/common';
+import { MqttModule } from 'nest-mqtt';
+import { MyController } from './my.controller';
+import { MyService } from './my.service';
+
+@Module({
+  imports: [
+    MqttModule.forRoot({
+      hostname: '<your-mqtt-host>',
+      port: <your-mqtt-port>,
+      username: '<your-mqtt-username>',
+      password: '<your-mqtt-password>',
+    }),
+  ],
+  controllers: [MyController],
+  providers: [MyService],
+})
+export class MyModule {}
+
+import { Injectable } from '@nestjs/common';
+import { MqttService } from '@nestjs/mqtt';
+
+@Injectable()
+export class MyService {
+  constructor(private readonly mqttService: MqttService) {}
+
+  async sendMessage(topic: string, message: string): Promise<void> {
+    await this.mqttService.connectAsync();
+    await this.mqttService.publishAsync(topic, message);
+    await this.mqttService.disconnectAsync();
+  }
+}
+
+async sendMessage(topic: string, message: string): Promise<void> {
+    if (!this.isConnected) {
+        await this.mqttService.connectAsync();
+        this.isConnected = true;
+    }
+
+    await this.mqttService.publishAsync(topic, message);
+}
+
+async disconnect() {
+    if (this.isConnected) {
+        await this.mqttService.disconnectAsync();
+        this.isConnected = false;
+    }
+}

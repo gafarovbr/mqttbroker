@@ -1,0 +1,42 @@
+Да, можно найти MQTT брокер в локальной сети с помощью Node.js. Вот пример кода на Node.js, который можно использовать для сканирования локальной сети и поиска устройств, работающих на протоколе MQTT:
+
+javascript
+Copy code
+const mqtt = require('mqtt')
+const net = require('net')
+const os = require('os')
+
+const localIP = getLocalIP()
+
+function getLocalIP() {
+  const interfaces = os.networkInterfaces()
+  for (let devName in interfaces) {
+    const iface = interfaces[devName]
+    for (let i = 0; i < iface.length; i++) {
+      const alias = iface[i]
+      if (alias.family === 'IPv4' && !alias.internal) {
+        return alias.address
+      }
+    }
+  }
+}
+
+function scanNetwork() {
+  const subnet = localIP.split('.').slice(0,3).join('.')
+  console.log(`Scanning network ${subnet}.0/24`)
+  for (let i = 1; i < 255; i++) {
+    const host = subnet + '.' + i
+    const client = mqtt.connect(`mqtt://${host}`)
+    client.on('connect', () => {
+      console.log(`Found MQTT broker at ${host}`)
+      client.end()
+    })
+    client.on('error', () => {
+      // do nothing, host is not a MQTT broker
+      client.end()
+    })
+  }
+}
+
+scanNetwork()
+В этом коде мы используем модули mqtt, net и os для создания клиента MQTT и сканирования локальной сети. Мы начинаем с получения локального IP-адреса с помощью модуля os
